@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  createdAt DateTime? @default(now()) @db.Timestamptz()
+  
+  sessions  Session[]
+  credentials  Credential[]
+  notes       Note[]
+  cards       Card[]
+  networks    Network[]
+
+  @@map("users")
+}
+
+model Session {
+  id      Int @id @default(autoincrement())
+  userId  Int
+  token   String @unique
+  createdAt DateTime? @default(now()) @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+model Credential {
+  id        Int @id @default(autoincrement())
+  userId    Int
+  label     String
+  url       String
+  login     String
+  password  String
+  createdAt DateTime? @default(now()) @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, label])
+  @@map("credentials")
+}
+
+model Note{
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  title     String    
+  body      String    
+  createdAt DateTime? @default(now()) @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id])
+ 
+  @@unique([userId, title])
+  @@map("notes")
+}
+
+model Card {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  number         String    
+  label          String    
+  securityCode   String    
+  expirationDate String    
+  password       String    
+  isVirtual      Boolean   @default(false)
+  type           CardType
+  createdAt      DateTime? @default(now()) @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, label])
+  @@map("cards")
+}
+
+model Network {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  label     String    
+  name      String    
+  password  String    
+  createdAt DateTime? @default(now()) @db.Timestamptz()
+ 
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, label])
+  @@map("networks")
+}
+
+enum CardType {
+  credit
+  debit
+  creditAndDebit
+}
