@@ -1,4 +1,3 @@
-import { title } from "process";
 import { prisma } from "../config/database.js";
 import { CreateNoteData } from "../services/noteServices.js";
 

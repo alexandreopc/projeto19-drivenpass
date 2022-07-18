@@ -57,6 +57,7 @@ export async function createToken(userId: number, email: string) {
       process.env.JWT_SECRET,
       (err, decoded) => {
         if (err) {
+          console.log("token expirado, faca login novamente");
           throw { type: "conflict" };
         }
       }

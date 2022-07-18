@@ -1,33 +1,32 @@
-import { Card } from "@prisma/client";
+import { Network } from "@prisma/client";
 import Cryptr from "cryptr";
 
-import cardRepository from "../repositories/cardRepository.js";
+import networkRepository from "../repositories/networkRepository.js";
 
-export type CreateCardData = Omit<Card, "id" | "createdAt">;
+export type CreateNetworkData = Omit<Network, "id" | "createdAt">;
 
-async function create(data: CreateCardData) {
+async function create(data: CreateNetworkData) {
   const cryptr = new Cryptr(process.env.JWT_SECRET);
   // // const decryptedString = cryptr.decrypt(encryptedString);
-  const encryptedSecurityCode = cryptr.encrypt(data.securityCode);
   const encryptedPassword = cryptr.encrypt(data.password);
-  delete data.securityCode;
   delete data.password;
   data = {
     ...data,
-    securityCode: encryptedSecurityCode,
     password: encryptedPassword,
   };
-  const isInvalidLabel = await cardRepository.findCardByNameAndUserId(data);
+  const isInvalidLabel = await networkRepository.findNetworkByNameAndUserId(
+    data
+  );
   if (isInvalidLabel) {
-    console.log("nome repetido por userId");
+    console.log("label repetido por userId");
     throw { type: "conflict" };
   }
-
-  await cardRepository.create(data);
+  console.log(data);
+  await networkRepository.create(data);
 }
 
 async function getAll(userId: number) {
-  const cards = await cardRepository.findCardsByUserId(userId);
+  const cards = await networkRepository.findNetworksByUserId(userId);
   if (cards.length === 0) {
     throw { type: "not_found" };
   }
@@ -35,7 +34,7 @@ async function getAll(userId: number) {
 }
 
 async function get(id: number, userId: number) {
-  const cards = await cardRepository.findCardById(id, userId);
+  const cards = await networkRepository.findNetworkById(id, userId);
   if (!cards) {
     throw { type: "not_found" };
   }
@@ -43,11 +42,11 @@ async function get(id: number, userId: number) {
 }
 
 async function remove(id: number, userId: number) {
-  const cards = await cardRepository.findCardById(id, userId);
+  const cards = await networkRepository.findNetworkById(id, userId);
   if (!cards) {
     throw { type: "not_found" };
   }
-  await cardRepository.removeById(id);
+  await networkRepository.removeById(id);
 }
 
 export default { create, getAll, get, remove };
