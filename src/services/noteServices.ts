@@ -5,9 +5,9 @@ import noteRepository from "../repositories/noteRepository.js";
 
 export type CreateNoteData = Omit<Note, "id" | "createdAt">;
 
+const cryptr = new Cryptr(process.env.JWT_SECRET);
+
 async function create(data: CreateNoteData) {
-  const cryptr = new Cryptr(process.env.JWT_SECRET);
-  // const decryptedString = cryptr.decrypt(encryptedString);
   const encryptedBody = cryptr.encrypt(data.body);
   delete data.body;
   data = { ...data, body: encryptedBody };
@@ -25,7 +25,12 @@ async function getAll(userId: number) {
   if (notes.length === 0) {
     throw { type: "not_found" };
   }
-  return notes;
+
+  const decryptedNotes = notes.map((note) => {
+    const decryptedPassword = cryptr.decrypt(note.body);
+    return { ...note, body: decryptedPassword };
+  });
+  return decryptedNotes;
 }
 
 async function get(id: number, userId: number) {
@@ -33,7 +38,9 @@ async function get(id: number, userId: number) {
   if (!notes) {
     throw { type: "not_found" };
   }
-  return notes;
+
+  const decryptedPassword = cryptr.decrypt(notes.body);
+  return { ...notes, body: decryptedPassword };
 }
 
 async function remove(id: number, userId: number) {

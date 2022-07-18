@@ -5,9 +5,9 @@ import networkRepository from "../repositories/networkRepository.js";
 
 export type CreateNetworkData = Omit<Network, "id" | "createdAt">;
 
+const cryptr = new Cryptr(process.env.JWT_SECRET);
+
 async function create(data: CreateNetworkData) {
-  const cryptr = new Cryptr(process.env.JWT_SECRET);
-  // // const decryptedString = cryptr.decrypt(encryptedString);
   const encryptedPassword = cryptr.encrypt(data.password);
   delete data.password;
   data = {
@@ -26,24 +26,37 @@ async function create(data: CreateNetworkData) {
 }
 
 async function getAll(userId: number) {
-  const cards = await networkRepository.findNetworksByUserId(userId);
-  if (cards.length === 0) {
+  const networks = await networkRepository.findNetworksByUserId(userId);
+  if (networks.length === 0) {
     throw { type: "not_found" };
   }
-  return cards;
+
+  const decryptedNetworks = networks.map((network) => {
+    const decryptedPassword = cryptr.decrypt(network.password);
+    return {
+      ...network,
+      password: decryptedPassword,
+    };
+  });
+  return decryptedNetworks;
 }
 
 async function get(id: number, userId: number) {
-  const cards = await networkRepository.findNetworkById(id, userId);
-  if (!cards) {
+  const networks = await networkRepository.findNetworkById(id, userId);
+  if (!networks) {
     throw { type: "not_found" };
   }
-  return cards;
+
+  const decryptedPassword = cryptr.decrypt(networks.password);
+  return {
+    ...networks,
+    password: decryptedPassword,
+  };
 }
 
 async function remove(id: number, userId: number) {
-  const cards = await networkRepository.findNetworkById(id, userId);
-  if (!cards) {
+  const networks = await networkRepository.findNetworkById(id, userId);
+  if (!networks) {
     throw { type: "not_found" };
   }
   await networkRepository.removeById(id);

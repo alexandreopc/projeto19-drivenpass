@@ -5,9 +5,9 @@ import cardRepository from "../repositories/cardRepository.js";
 
 export type CreateCardData = Omit<Card, "id" | "createdAt">;
 
+const cryptr = new Cryptr(process.env.JWT_SECRET);
+
 async function create(data: CreateCardData) {
-  const cryptr = new Cryptr(process.env.JWT_SECRET);
-  // // const decryptedString = cryptr.decrypt(encryptedString);
   const encryptedSecurityCode = cryptr.encrypt(data.securityCode);
   const encryptedPassword = cryptr.encrypt(data.password);
   delete data.securityCode;
@@ -31,7 +31,17 @@ async function getAll(userId: number) {
   if (cards.length === 0) {
     throw { type: "not_found" };
   }
-  return cards;
+
+  const decryptedCards = cards.map((card) => {
+    const decryptedSecurityCode = cryptr.decrypt(card.securityCode);
+    const decryptedPassword = cryptr.decrypt(card.password);
+    return {
+      ...card,
+      securityCode: decryptedSecurityCode,
+      password: decryptedPassword,
+    };
+  });
+  return decryptedCards;
 }
 
 async function get(id: number, userId: number) {
@@ -39,7 +49,14 @@ async function get(id: number, userId: number) {
   if (!cards) {
     throw { type: "not_found" };
   }
-  return cards;
+
+  const decryptedSecurityCode = cryptr.decrypt(cards.securityCode);
+  const decryptedPassword = cryptr.decrypt(cards.password);
+  return {
+    ...cards,
+    securityCode: decryptedSecurityCode,
+    password: decryptedPassword,
+  };
 }
 
 async function remove(id: number, userId: number) {

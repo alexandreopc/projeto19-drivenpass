@@ -5,9 +5,9 @@ import credentialRepository from "../repositories/credentialRepository.js";
 
 export type CreateCredentialData = Omit<Credential, "id" | "createdAt">;
 
+const cryptr = new Cryptr(process.env.JWT_SECRET);
+
 async function create(data: CreateCredentialData) {
-  const cryptr = new Cryptr(process.env.JWT_SECRET);
-  // const decryptedString = cryptr.decrypt(encryptedString);
   const encryptedPassword = cryptr.encrypt(data.password);
   delete data.password;
   data = { ...data, password: encryptedPassword };
@@ -28,7 +28,13 @@ async function getAll(userId: number) {
   if (credentials.length === 0) {
     throw { type: "not_found" };
   }
-  return credentials;
+
+  const decryptedCredentials = credentials.map((credential) => {
+    const decryptedPassword = cryptr.decrypt(credential.password);
+    return { ...credential, password: decryptedPassword };
+  });
+
+  return decryptedCredentials;
 }
 
 async function get(id: number, userId: number) {
@@ -36,7 +42,9 @@ async function get(id: number, userId: number) {
   if (!credentials) {
     throw { type: "not_found" };
   }
-  return credentials;
+
+  const decryptedPassword = cryptr.decrypt(credentials.password);
+  return { ...credentials, password: decryptedPassword };
 }
 
 async function remove(id: number, userId: number) {
