@@ -4,7 +4,7 @@ import authService, { CreateUserData } from "../services/authServices.js";
 export async function signup(req: Request, res: Response) {
   const body: CreateUserData = req.body;
 
-  authService.register(body);
+  await authService.register(body);
   res.sendStatus(201);
 }
 
